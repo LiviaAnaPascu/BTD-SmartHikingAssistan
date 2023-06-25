@@ -1,5 +1,6 @@
 import requests
 import socket
+# Make a GET request to retrieve IP address
 ipAddr = requests.get('https://api.ipify.org').content.decode('utf8')
 
 def getLocation(ipAddress):
@@ -18,12 +19,20 @@ def getLocation(ipAddress):
 
 def getUVIndex(lat, lon ):
     APIKEY="3dca95e4f3135362a5eb61f243216885"
+    # Make a GET request to retrieve UV data from an API
     responseUV = requests.get("https://api.openweathermap.org/data/3.0/onecall?lat="+str(lat)+"&lon="+str(lon)+"&exclude=minutely,hourly,daily,alerts&appid="+APIKEY)
-    dataUV = responseUV.json()
-    current=dataUV["current"]
-    uv=current["uvi"]
-    return uv
+    # Check if the request was successful (status code 200)
+    if responseUV.status_code == 200:
+        dataUV = responseUV.json()
+        current=dataUV["current"]
+        uv=current["uvi"]
+        return uv
+    else:
+        # Handle the error
+        return responseUV.status_code
 
 def getUVIndexBasedOnIP(ipAddress):
     lat, lon= getLocation(ipAddress)
     return getUVIndex(lat, lon)
+
+print(getUVIndexBasedOnIP(ipAddr))
