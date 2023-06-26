@@ -1,5 +1,4 @@
 import requests
-import socket
 # Make a GET request to retrieve IP address
 ipAddr = requests.get('https://api.ipify.org').content.decode('utf8')
 
@@ -34,5 +33,18 @@ def getUVIndex(lat, lon ):
 def getUVIndexBasedOnIP(ipAddress):
     lat, lon= getLocation(ipAddress)
     return getUVIndex(lat, lon)
+
+
+
+def convertUVIndexToString(ipAddress):
+    index= getUVIndexBasedOnIP(ipAddress)
+    if(index <= 2):
+        return "Low"
+    if(index >= 3 or index <= 5):
+        return "Moderate"
+    if(index >=6 or index <= 7):
+        return "High"
+    if(index >=7 or index <= 10):
+        return "Very High"
 
 print(getUVIndexBasedOnIP(ipAddr))
