@@ -35,7 +35,6 @@ def getUVIndexBasedOnIP(ipAddress):
     return getUVIndex(lat, lon)
 
 
-
 def convertUVIndexToString(ipAddress):
     index= getUVIndexBasedOnIP(ipAddress)
     if(index <= 2):
