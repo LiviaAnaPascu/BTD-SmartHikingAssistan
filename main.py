@@ -13,7 +13,6 @@ import _thread
 import urequests
 
 serverCfg = {
-    # "host": "192.168.1.103",
     "host": "192.168.43.113",
     "port": 50
 }
@@ -26,7 +25,7 @@ SCREEN_WEATHER = 3
 # Current screen variable
 lcd.clear()
 current_screen = SCREEN_MAIN
-axp.setLcdBrightness(100)
+axp.setLcdBrightness(0)
 
 # Thresholds for the detection
 thStepP = 0.2  # save only peaks above this threshold
@@ -78,11 +77,11 @@ emName = ""
 PWM0 = machine.PWM(2, freq=500, duty=50, timer=0)
 PWM0.pause()
 
-#Notifications
+# Notifications
 drinkTime = 360000
-#drinkTime = 1000 #Testing
+# drinkTime = 1000 #Testing
 sunTime = 0
-PWM1 = machine.PWM(2, freq=300, duty=50, timer=0) #Notify alert
+PWM1 = machine.PWM(2, freq=300, duty=50, timer=0)  # Notify alert
 PWM1.pause()
 
 # Communication
@@ -95,17 +94,21 @@ def send_msg(socket, msg):
     msg = struct.pack('>I', len(msg)) + msg  # pack message & length into byte structure
     socket.sendall(msg)
 
+
 # Signal Processing utilities
 def magnitude(acc):
     return math.sqrt(math.pow(acc[0], 2) + math.pow(acc[1], 2) + math.pow(acc[2], 2))
+
 
 def lpf(val, prevVal, prevLpf):  # Low Pass Filter, Cutoff = 10
     result = (0.12019831) * prevLpf + (0.43990085) * val + (0.43990085) * prevVal
     return result
 
+
 def hpf(val, prevVal, prevHpf):  # High Pass Filter, Cutoff = 0.1
     result = (0.99373649) * prevHpf + (0.99686825) * val + (-0.99686825) * prevVal
     return result
+
 
 def process_Window(window, time):
     neutral = False
@@ -160,6 +163,7 @@ def process_Window(window, time):
                 elif inlift:  # end lift start
                     liftN = True
 
+
 # Button inputs
 def buttonB_wasPressed():
     global current_screen, last_activity_time
@@ -184,7 +188,10 @@ def buttonB_wasPressed():
         uv_screen()
     elif current_screen == SCREEN_WEATHER:
         weather_screen()
+
+
 btnB.wasPressed(buttonB_wasPressed)
+
 
 def buttonA_wasPressed():
     # global params
@@ -207,7 +214,10 @@ def buttonA_wasPressed():
 
     screenset = False
     pass
+
+
 btnA.wasPressed(buttonA_wasPressed)
+
 
 # Screen Functions
 
@@ -227,7 +237,7 @@ def main_screen():
     StepImage = M5Img(10, 143, "res/footprint.png", True)
 
     if weather == "Clear":
-       TempImage = M5Img(10, 178, "res/clear.png", True)
+        TempImage = M5Img(10, 178, "res/clear.png", True)
     elif weather == "Clouds":
         TempImage = M5Img(10, 178, "res/clouds.png", True)
     elif weather == "Rain":
@@ -247,9 +257,10 @@ def main_screen():
     Temperature = M5TextBox(34, 182, '{}°C'.format(temperature), lcd.FONT_Default, 0x000000, rotate=0)
     label1 = M5TextBox(35, 217, uv, lcd.FONT_Default, 0x000000, rotate=0)
 
-    #StepCounter = M5TextBox(15, 145, str(steps) + " steps", lcd.FONT_Default, 0x000000, rotate=0)
-    #Temperature = M5TextBox(15, 181, '{}°C'.format(temperature), lcd.FONT_Default, 0x000000, rotate=0)
-    #label1 = M5TextBox(15, 216, "UV " + uv, lcd.FONT_Default, 0x000000, rotate=0)
+    # StepCounter = M5TextBox(15, 145, str(steps) + " steps", lcd.FONT_Default, 0x000000, rotate=0)
+    # Temperature = M5TextBox(15, 181, '{}°C'.format(temperature), lcd.FONT_Default, 0x000000, rotate=0)
+    # label1 = M5TextBox(15, 216, "UV " + uv, lcd.FONT_Default, 0x000000, rotate=0)
+
 
 def steps_screen():
     global steps
@@ -261,6 +272,7 @@ def steps_screen():
     label0 = M5TextBox(25, 100, "Today's count:", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
     StepCounter = M5TextBox(40, 120, str(steps) + " steps", lcd.FONT_Default, 0x000000, rotate=0)
 
+
 def uv_screen():
     global uv
     global uvInd
@@ -270,7 +282,7 @@ def uv_screen():
     Frame = M5Rect(7, 60, 120, 120, 0x707070, 0x707070)
     UVImage = M5Img(60, 70, "res/beach.png", True)
     label0 = M5TextBox(43, 100, "UV index:", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
-    #UVIndex = M5TextBox(15, 120, str(uvInd) + " " + uv, lcd.FONT_Default, 0x000000, rotate=0)
+    # UVIndex = M5TextBox(15, 120, str(uvInd) + " " + uv, lcd.FONT_Default, 0x000000, rotate=0)
     if (uv == "Low"):
         UVIndex = M5TextBox(47, 120, str(uvInd) + " " + uv, lcd.FONT_Default, 0x000000, rotate=0)
         label2 = M5TextBox(10, 145, "Protection optional", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
@@ -283,6 +295,7 @@ def uv_screen():
     elif (uv == "Very High"):
         UVIndex = M5TextBox(25, 120, str(uvInd) + " " + uv, lcd.FONT_Default, 0x000000, rotate=0)
         label2 = M5TextBox(17, 145, "Stay in Shadows!", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
+
 
 def weather_screen():
     global tempFeels
@@ -298,7 +311,7 @@ def weather_screen():
         label1 = M5TextBox(60, 80, weather, lcd.FONT_DefaultSmall, 0x000000, rotate=0)
     elif weather == "Clouds":
         WeatherImage = M5Img(32, 75, "res/clouds.png", True)
-        label1 = M5TextBox(57, 80, weather, lcd.FONT_DefaultSmall, 0x000000, rotate=0)  
+        label1 = M5TextBox(57, 80, weather, lcd.FONT_DefaultSmall, 0x000000, rotate=0)
     elif weather == "Rain":
         WeatherImage = M5Img(38, 75, "res/rain.png", True)
         label1 = M5TextBox(63, 80, weather, lcd.FONT_DefaultSmall, 0x000000, rotate=0)
@@ -313,12 +326,12 @@ def weather_screen():
         label1 = M5TextBox(63, 80, weather, lcd.FONT_DefaultSmall, 0x000000, rotate=0)
     else:
         WeatherImage = M5Img(30, 75, "res/mist.png", True)
-        label1 = M5TextBox(55, 80, weather, lcd.FONT_DefaultSmall, 0x000000, rotate=0)     
+        label1 = M5TextBox(55, 80, weather, lcd.FONT_DefaultSmall, 0x000000, rotate=0)
 
-    
     label0 = M5TextBox(30, 105, "Temperature:", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
     Temperature = M5TextBox(40, 125, str(temperature) + " \u00B0C", lcd.FONT_Default, 0x000000, rotate=0)
     label2 = M5TextBox(15, 155, "Feels like " + str(tempFeels) + " \u00B0C", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
+
 
 def fall_screen(timer):
     global PWM0
@@ -333,7 +346,7 @@ def fall_screen(timer):
     label3 = M5TextBox(10, 149, "Press Button A", lcd.FONT_Default, 0x000000, rotate=0)
     label4 = M5TextBox(10, 168, "to cancel Alert", lcd.FONT_Default, 0x000000, rotate=0)
 
-    label5 = M5TextBox(15, 200, "Alert in " + str(30-timer) + "sec" , lcd.FONT_Default, 0x000000, rotate=0)
+    label5 = M5TextBox(15, 200, "Alert in " + str(30 - timer) + "sec", lcd.FONT_Default, 0x000000, rotate=0)
 
     PWM0.resume()
     wait_ms(90)
@@ -342,6 +355,7 @@ def fall_screen(timer):
     wait_ms(90)
     M5Led.off()
     wait_ms(2)
+
 
 def fallen_screen():
     lcd.clear()
@@ -353,6 +367,7 @@ def fallen_screen():
     label2 = M5TextBox(23, 130, "An Alert was", lcd.FONT_Default, 0x000000, rotate=0)
     label3 = M5TextBox(10, 149, "sent to all other", lcd.FONT_Default, 0x000000, rotate=0)
     label4 = M5TextBox(10, 168, "linked Devices!", lcd.FONT_Default, 0x000000, rotate=0)
+
 
 def alert_screen():
     global emName
@@ -373,6 +388,7 @@ def alert_screen():
     M5Led.off()
     wait_ms(2)
 
+
 def notification(text):
     global screenset
     global PWM1
@@ -387,7 +403,6 @@ def notification(text):
         label0 = M5TextBox(10, 55, "Reapply", lcd.FONT_Default, 0x000000, rotate=0)
         label1 = M5TextBox(10, 75, "sunscreen!", lcd.FONT_Default, 0x000000, rotate=0)
 
-
     for i in range(0, 10):
         PWM1.resume()
         wait_ms(100)
@@ -396,7 +411,7 @@ def notification(text):
         wait_ms(100)
         M5Led.off()
         wait_ms(2)
-    
+
     Frame.hide()
     label0.hide()
     label1.hide()
@@ -406,7 +421,7 @@ def notification(text):
 # Communication Functions
 
 def handle_emergency_messages():
-    global emergency 
+    global emergency
     global emName
 
     host = wlan.ifconfig()[0]
@@ -427,7 +442,7 @@ def handle_emergency_messages():
     res = str(client_socket.recv(1024).decode())
     name = res.split('*')[1]
     # Trigger buzzer here and show UI stuff
-    #alert_screen(name)
+    # alert_screen(name)
     emergency = True
     emName = name
 
@@ -435,15 +450,18 @@ def handle_emergency_messages():
     client_socket.close()
     server_socket.close()
 
+
 def register_device():
     global s
     msg = "Register*" + sessionId + "*" + deviceName
     s.send(msg.encode())
 
+
 def deregister_device():
     global s
     msg = "Deregister*" + sessionId
     s.send(msg.encode())
+
 
 def get_weather(pubIp):
     global s
@@ -453,6 +471,7 @@ def get_weather(pubIp):
     rsp = str(s.recv(1024).decode())
     return rsp
 
+
 def send_emergency():
     global s
     connect_to_server()
@@ -461,10 +480,12 @@ def send_emergency():
     wait_ms(20)
     close_connection()
 
+
 def connect_to_server():
     global s
     # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((serverCfg["host"], serverCfg["port"]))
+
 
 def close_connection():
     global s
@@ -480,24 +501,19 @@ wlan.connect('HannibalsHorrificHotspot', 'honeybunny')
 # We need the public IP otherwise we can't get any location data
 label1 = M5TextBox(30, 140, "Set Up", lcd.FONT_DefaultSmall, 0xffffff, rotate=0)
 label0 = M5TextBox(20, 160, "Find Ip Address", lcd.FONT_DefaultSmall, 0xffffff, rotate=0)
-#publicIP = urequests.get(url='https://api.ipify.org').text
+publicIP = urequests.get(url='https://api.ipify.org').text
 
 label0.setText("Server Connection")
-#connect_to_server()
-#register_device()
-#responseWeather = get_weather(publicIP)
-#response = responseWeather.split("*", 5)
-#uv = response[0]
-#uvInd = response[1]
-#temperature = response[2]
-#tempFeels = response[3]
-#weather = response[4]
-uv = "Moderate"
-uvInd = 5
-temperature = 20.91
-tempFeels = 20.05
-weather = "Thunderstorm"
-#close_connection()
+connect_to_server()
+register_device()
+responseWeather = get_weather(publicIP)
+response = responseWeather.split("*", 5)
+uv = response[0]
+uvInd = response[1]
+temperature = response[2]
+tempFeels = response[3]
+weather = response[4]
+close_connection()
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 label1.setText("")
@@ -505,17 +521,17 @@ label0.setText("")
 if (uv == "Low"):
     sunTime = 0
 elif (uv == "Moderate"):
-    sunTime = 1440000 #every 5 hours
+    sunTime = 1440000  # every 5 hours
 elif (uv == "High"):
-    sunTime = 720000 #every 2 hours
+    sunTime = 720000  # every 2 hours
 elif (uv == "Very High"):
-    sunTime = 360000 #every hour
+    sunTime = 360000  # every hour
 
-#testing
-#sunTime = 1500
+# testing
+# sunTime = 1500
 
 # Set Up Threading
-#_thread.start_new_thread(handle_emergency_messages, ())
+_thread.start_new_thread(handle_emergency_messages, ())
 
 # Setup for screen
 setScreenColor(0x000000)
@@ -552,7 +568,7 @@ prev = cur
 wait_ms(wait)
 
 # First time both filtered
-cur = magnitude(imu0.acceleration) 
+cur = magnitude(imu0.acceleration)
 curTime = -1
 curLpf = lpf(cur, prev, prevLpf)
 curFil = hpf(curLpf, prevLpf, 0.00)
@@ -580,20 +596,20 @@ while True:
         time2 = []
 
     if (c1 == samplenr):  # Process and reset Window 1
-        #M5Led.on()
+        # M5Led.on()
         process_Window(window1, time1)
         c1 = 0
         window1 = []
         time1 = []
-        #M5Led.off()
+        # M5Led.off()
 
     if (c2 == samplenr):  # Process and reset Window 2
-        #M5Led.on()
+        # M5Led.on()
         process_Window(window2, time2)
         c2 = 0
         window2 = []
         time2 = []
-        #M5Led.off()
+        # M5Led.off()
 
     if (not screenset):
         battery = (str((map_value((axp.getBatVoltage()), 3.7, 4.1, 0, 100))) + str('%'))
@@ -666,7 +682,7 @@ while True:
                 time2.append(curTime)
                 lastSaved = 0
 
-    #Notification Time
+    # Notification Time
     if (totalC % drinkTime) == 0:
         notification("drink")
     if (totalC % sunTime) == 0:
@@ -683,7 +699,7 @@ while True:
     if (fallen):
         fall_screen(fallTimer)
         fallTimer = fallTimer + 1
-        if(fallTimer == 30):
+        if (fallTimer == 30):
             fallen = False
             fallSent = True
             screenset = False
