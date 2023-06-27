@@ -11,13 +11,13 @@ def addNewDevice(sessionId, deviceIP, name):
         temp = dict()
         devices.update({sessionId : temp})
     listToAppend = devices[sessionId]
-    listToAppend.update({deviceIP : name})
+    listToAppend.update({deviceIP[0] : name})
     devices[sessionId] = listToAppend
 
 
 def removeDevice(sessionId, deviceIP):
     listToRemove = devices[sessionId]
-    listToRemove.pop(deviceIP)
+    listToRemove.pop(deviceIP[0])
     if len(listToRemove) == 0:
         devices.pop(sessionId)
     devices[sessionId] = listToRemove
@@ -46,11 +46,12 @@ def handle_client(client_socket, address):
             # value = sessionId
             elif command[0] == "Emergency":
                 addresses = devices[command[1]]
+                name = addresses[address[0]]
                 for addr in addresses:
-                    if addr != address:
+                    if addr != address[0]:
                         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                        s.connect((addr, 421))
-                        s.send("EMERGENCY!".encode())
+                        s.connect((addr, 420))
+                        s.send(("Emergency*" + str(name)).encode())
                         s.close()
 
             elif command[0] == "Stop":

@@ -213,12 +213,12 @@ def main_screen():
     Steps = M5Rect(7, 140, 120, 25, 0x707070, 0x707070)
     Weather = M5Rect(7, 175, 120, 25, 0x707070, 0x707070)
     rectangle0 = M5Rect(7, 210, 120, 25, 0x707070, 0x707070)
-    StepImage = M5Img(30, 143, "res/footprint.png", True)
-    TempImage = M5Img(30, 178, "res/weather.png", True)
-    UVImage = M5Img(30, 213, "res/beach.png", True)
-    StepCounter = M5TextBox(54, 144, str(steps), lcd.FONT_DejaVu18, 0x000000, rotate=0)
-    Temperature = M5TextBox(54, 180, '{}°C'.format(temperature), lcd.FONT_DejaVu18, 0x000000, rotate=0)
-    label1 = M5TextBox(55, 215, uv, lcd.FONT_DejaVu18, 0x000000, rotate=0)
+    StepImage = M5Img(10, 143, "res/footprint.png", True)
+    TempImage = M5Img(10, 178, "res/weather.png", True)
+    UVImage = M5Img(10, 213, "res/beach.png", True)
+    StepCounter = M5TextBox(34, 144, str(steps), lcd.FONT_DejaVu18, 0x000000, rotate=0)
+    Temperature = M5TextBox(34, 180, '{}°C'.format(temperature), lcd.FONT_DejaVu18, 0x000000, rotate=0)
+    label1 = M5TextBox(35, 215, uv, lcd.FONT_DejaVu18, 0x000000, rotate=0)
 
 
 def steps_screen():
@@ -272,7 +272,7 @@ def fall_screen():
     label3 = M5TextBox(10, 149, "Press Button A", lcd.FONT_Default, 0x000000, rotate=0)
     label4 = M5TextBox(10, 168, "to cancel Alert", lcd.FONT_Default, 0x000000, rotate=0)
 
-    for i in range(0, 10):
+    for i in range(0, 50):
         PWM0 = machine.PWM(2, freq=500, duty=50, timer=0)
         wait_ms(90)
         PWM0 = machine.PWM(2, freq=200, duty=0, timer=0)
@@ -281,14 +281,14 @@ def fall_screen():
         M5Led.off()
         wait_ms(2)
 
+    send_emergency()
+    wait_ms(10)
     label2.setText("An Alert was")
     label3.setText("sent to all other")
     label4.setText("linked Devices!")
 
-    send_emergency()
 
-
-def alert_screen():
+def alert_screen(name):
     lcd.clear()
     axp.setLcdBrightness(100)
     setScreenColor(0xffffff)
@@ -296,7 +296,7 @@ def alert_screen():
     StepImage = M5Img(60, 70, "res/warning.png", True)
     label0 = M5TextBox(20, 114, "Emergency Alert!", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
     label2 = M5TextBox(49, 130, "From", lcd.FONT_Default, 0x000000, rotate=0)
-    label3 = M5TextBox(33, 149, "DEVICE 1", lcd.FONT_Default, 0x000000, rotate=0)
+    label3 = M5TextBox(33, 149, "name", lcd.FONT_Default, 0x000000, rotate=0)
     PWM0 = machine.PWM(2, freq=500, duty=50, timer=0)
     wait_ms(90)
     PWM0 = machine.PWM(2, freq=200, duty=0, timer=0)
@@ -319,19 +319,23 @@ def notification(text):
 # Communication Functions
 
 def handle_emergency_messages():
-    host = 'localhost'
-    port = 421
+    host = wlan.ifconfig()[0]
+    port = 420
 
     # Create a TCP socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((host, port))
     server_socket.listen(1)
 
+    wait_ms(100)
+
     client_socket, addr = server_socket.accept()
     # print(f"Accepted connection from {addr[0]}:{addr[1]}")
 
+    res = str(client_socket.recv(1024).decode())
+    name = res.split('*')[1]
     # Trigger buzzer here and show UI stuff
-    alert_screen()
+    alert_screen(name)
 
     # close connection
     client_socket.close()
@@ -339,16 +343,19 @@ def handle_emergency_messages():
 
 
 def register_device():
+    global s
     msg = "Register*" + sessionId + "*" + deviceName
     s.send(msg.encode())
 
 
 def deregister_device():
+    global s
     msg = "Deregister*" + sessionId
     s.send(msg.encode())
 
 
 def get_weather(pubIp):
+    global s
     msg = "Weather*" + pubIp
     s.send(msg.encode())
 
@@ -357,17 +364,22 @@ def get_weather(pubIp):
 
 
 def send_emergency():
+    global s
     connect_to_server()
     msg = "Emergency*" + sessionId
     s.send(msg.encode())
+    wait_ms(20)
     close_connection()
 
 
 def connect_to_server():
+    global s
+    # s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     s.connect((serverCfg["host"], serverCfg["port"]))
 
 
 def close_connection():
+    global s
     s.close()
 
 
@@ -390,13 +402,14 @@ temperature = response[2]
 tempFeels = response[3]
 weather = response[4]
 close_connection()
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 # Set Up Threading
 _thread.start_new_thread(handle_emergency_messages, ())
 
 # Setup for screen
 setScreenColor(0x000000)
-axp.setLcdBrightness(0)
+# axp.setLcdBrightness(0)
 last_activity_time = time.time()
 battery = (str((map_value((axp.getBatVoltage()), 3.7, 4.1, 0, 100))) + str('%'))
 date = rtc.now()
@@ -538,15 +551,16 @@ while True:
     if (fallen and not screenset):
         # first check for 10 secs then send alarm message
         # possibly exchange
-        fall_screen()
+        # fall_screen()
+        send_emergency()
         screenset = True
         fallen = False
     elif (inlift and not screenset):
-        main_screen()
+        # main_screen()
         screenset = True
     elif (not screenset):
         lcd.clear()
         setScreenColor(0x000000)
-        axp.setLcdBrightness(0)
+        # axp.setLcdBrightness(0)
 
     wait_ms(wait)
