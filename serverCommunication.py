@@ -6,15 +6,20 @@ from weather import *
 devices = dict()
 
 
-def addNewDevice(sessionId, deviceIP):
+def addNewDevice(sessionId, deviceIP, name):
+    if devices.get(sessionId) is None:
+        temp = dict()
+        devices.update({sessionId : temp})
     listToAppend = devices[sessionId]
-    listToAppend.append(deviceIP)
+    listToAppend.update({deviceIP : name})
     devices[sessionId] = listToAppend
 
 
 def removeDevice(sessionId, deviceIP):
     listToRemove = devices[sessionId]
-    listToRemove.remove(deviceIP)
+    listToRemove.pop(deviceIP)
+    if len(listToRemove) == 0:
+        devices.pop(sessionId)
     devices[sessionId] = listToRemove
 
 
@@ -24,22 +29,22 @@ def handle_client(client_socket, address):
         while True:
             msg = str(client_socket.recv(1024).decode())
 
-            # index 0 = command, index 1 = value
-            command = msg.split('#', 2)
+            # index 0 = command, index 1 = value, ind 2 = name for register
+            command = msg.split('*', 3)
 
             # value = sessionId
             if command[0] == "Register":
-                addNewDevice(command[1], address)
+                addNewDevice(command[1], address, command[2])
 
-            if command[0] == "Deregister":
+            elif command[0] == "Deregister":
                 removeDevice(command[1], address)
 
-            if command[0] == "Weather":
-                uv = getUVIndexBasedOnIP(address)
-                client_socket.send(str(uv).encode())
+            elif command[0] == "Weather":
+                uv,uvInd,temp,feelTemp,wh = convertUVIndexToString(command[1])
+                client_socket.send((str(uv)+"*"+str(uvInd)+"*"+str(temp)+"*"+str(feelTemp)+"*"+str(wh)).encode())
 
             # value = sessionId
-            if command[0] == "Emergency":
+            elif command[0] == "Emergency":
                 addresses = devices[command[1]]
                 for addr in addresses:
                     if addr != address:
@@ -48,7 +53,7 @@ def handle_client(client_socket, address):
                         s.send("EMERGENCY!".encode())
                         s.close()
 
-            if command[0] == "Stop":
+            elif command[0] == "Stop":
                 break
     except socket.error as ex:
         print(ex)
@@ -57,10 +62,10 @@ def handle_client(client_socket, address):
         client_socket.close()  # close the connection
 
 
-def start_server():
+def start_server(ip):
     # Configure server host and port
-    host = 'localhost'
-    port = 420
+    host = ip
+    port = 50
 
     # Create a TCP socket
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -82,5 +87,10 @@ def start_server():
 def initializeDeviceStore():
     global devices
     devices = dict()
+
+
+ip = socket.gethostbyname(socket.gethostname())
+initializeDeviceStore()
+start_server(ip)
 
 
