@@ -25,7 +25,7 @@ SCREEN_WEATHER = 3
 # Current screen variable
 lcd.clear()
 current_screen = SCREEN_MAIN
-axp.setLcdBrightness(0)
+axp.setLcdBrightness(100)
 
 # Thresholds for the detection
 thStepP = 0.2  # save only peaks above this threshold
@@ -78,8 +78,7 @@ PWM0 = machine.PWM(2, freq=500, duty=50, timer=0)
 PWM0.pause()
 
 # Notifications
-drinkTime = 360000
-# drinkTime = 1000 #Testing
+drinkTime = 360000  # every 3 hours
 sunTime = 0
 PWM1 = machine.PWM(2, freq=300, duty=50, timer=0)  # Notify alert
 PWM1.pause()
@@ -205,10 +204,10 @@ def buttonA_wasPressed():
         fallen = False
     elif fallSent:
         fallSent = False
-    elif inlift:
-        inlift = False
     elif emergency:
         emergency = False
+    elif inlift:
+        inlift = False
     else:
         inlift = True
 
@@ -379,7 +378,7 @@ def alert_screen():
     StepImage = M5Img(60, 70, "res/warning.png", True)
     label0 = M5TextBox(20, 114, "Emergency Alert!", lcd.FONT_DefaultSmall, 0x000000, rotate=0)
     label2 = M5TextBox(49, 130, "From", lcd.FONT_Default, 0x000000, rotate=0)
-    label3 = M5TextBox(33, 149, "Device " + emName, lcd.FONT_Default, 0x000000, rotate=0)
+    label3 = M5TextBox(20, 149, "Device " + emName, lcd.FONT_Default, 0x000000, rotate=0)
     PWM0.resume()
     wait_ms(90)
     PWM0.pause()
@@ -395,13 +394,28 @@ def notification(text):
 
     wait_ms(10)
     axp.setLcdBrightness(100)
-    Frame = M5Rect(7, 30, 120, 80, 0x707070, 0xedef6e)
+    Frame = M5Rect(7, 30, 120, 55, 0x707070, 0xedef6e)
     if text == "drink":
-        label0 = M5TextBox(10, 55, "Don't forget", lcd.FONT_Default, 0x000000, rotate=0)
-        label1 = M5TextBox(10, 75, "to hydrate!", lcd.FONT_Default, 0x000000, rotate=0)
+        label0 = M5TextBox(10, 43, "Don't forget", lcd.FONT_Default, 0x000000, rotate=0)
+        label1 = M5TextBox(10, 63, "to hydrate!", lcd.FONT_Default, 0x000000, rotate=0)
     elif text == "sun":
-        label0 = M5TextBox(10, 55, "Reapply", lcd.FONT_Default, 0x000000, rotate=0)
-        label1 = M5TextBox(10, 75, "sunscreen!", lcd.FONT_Default, 0x000000, rotate=0)
+        label0 = M5TextBox(10, 43, "Reapply", lcd.FONT_Default, 0x000000, rotate=0)
+        label1 = M5TextBox(10, 63, "sunscreen!", lcd.FONT_Default, 0x000000, rotate=0)
+    elif text == "thunder":
+        label0 = M5TextBox(10, 43, "Weather Alert!", lcd.FONT_Default, 0x000000, rotate=0)
+        label1 = M5TextBox(10, 63, "Thunderstorm", lcd.FONT_Default, 0x000000, rotate=0)
+    elif text == "rain":
+        label0 = M5TextBox(10, 43, "Weather: Rain", lcd.FONT_Default, 0x000000, rotate=0)
+        label1 = M5TextBox(10, 63, "Bring Cover!", lcd.FONT_Default, 0x000000, rotate=0)
+    elif text == "drizzle":
+        label0 = M5TextBox(10, 43, "Weather: Drizzle", lcd.FONT_Default, 0x000000, rotate=0)
+        label1 = M5TextBox(10, 63, "Bring Cover!", lcd.FONT_Default, 0x000000, rotate=0)
+    elif text == "snow":
+        label0 = M5TextBox(10, 43, "Snow Warning!", lcd.FONT_Default, 0x000000, rotate=0)
+        label1 = M5TextBox(10, 63, "Dress warmly!", lcd.FONT_Default, 0x000000, rotate=0)
+    elif text == "mist":
+        label0 = M5TextBox(10, 43, "Weather Alert!", lcd.FONT_Default, 0x000000, rotate=0)
+        label1 = M5TextBox(10, 63, "Limited Sight!", lcd.FONT_Default, 0x000000, rotate=0)
 
     for i in range(0, 10):
         PWM1.resume()
@@ -495,12 +509,15 @@ def close_connection():
 # WLAN Connection and Server Communication Setups
 wlan = network.WLAN(network.STA_IF)
 wlan.active(True)
-wlan.connect('HH72VM_43BD_2.4G', 'dtF9dK6G')
+# wlan.connect('HH72VM_43BD_2.4G', 'dtF9dK6G')
 wlan.connect('HannibalsHorrificHotspot', 'honeybunny')
 
-# We need the public IP otherwise we can't get any location data
 label1 = M5TextBox(30, 140, "Set Up", lcd.FONT_DefaultSmall, 0xffffff, rotate=0)
-label0 = M5TextBox(20, 160, "Find Ip Address", lcd.FONT_DefaultSmall, 0xffffff, rotate=0)
+label0 = M5TextBox(20, 160, "Connect to WLAN", lcd.FONT_DefaultSmall, 0xffffff, rotate=0)
+wait_ms(5000)
+
+# We need the public IP otherwise we can't get any location data
+label0.setText("Find Ip Address")
 publicIP = urequests.get(url='https://api.ipify.org').text
 
 label0.setText("Server Connection")
@@ -527,11 +544,20 @@ elif (uv == "High"):
 elif (uv == "Very High"):
     sunTime = 360000  # every hour
 
-# testing
-# sunTime = 1500
-
 # Set Up Threading
 _thread.start_new_thread(handle_emergency_messages, ())
+
+# Check weather notifications
+if (weather == "Thunderstorm"):
+    notification("thunder")
+elif (weather == "Rain"):
+    notification("rain")
+elif (weather == "Drizzle"):
+    notification("drizzle")
+elif (weather == "Snow"):
+    notification("snow")
+elif not ((weather == "Clear") or (weather == "Clouds")):
+    notification("mist")
 
 # Setup for screen
 setScreenColor(0x000000)
